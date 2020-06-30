@@ -44,8 +44,10 @@ namespace SyslogKinesis.kinesis
         /// <returns></returns>
         public static ILogger GetKinesisFirehoseLogger(string streamName)
         {
-            var client = new AmazonKinesisFirehoseClient(RegionEndpoint.EUWest2);
-
+            var client = new AmazonKinesisFirehoseClient();
+            
+            // temp
+            Serilog.Debugging.SelfLog.Enable(Console.Error);
             var loggerConfig = new LoggerConfiguration()
                 .WriteTo.Console()
                 .MinimumLevel.Debug();
