@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "SyslogKinesis": {
+      "commandName": "Project"
+    }
+  }
+}

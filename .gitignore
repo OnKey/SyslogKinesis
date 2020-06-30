@@ -1,0 +1,11 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/SyslogKinesis/.vs
+/SyslogKinesis/bin
+/SyslogKinesis/obj
+/SyslogKinesis/appsettings.local.json
+/SyslogKinesisTest/bin
+/SyslogKinesisTest/obj
+/SyslogKinesis/SyslogKinesis.sln.DotSettings.user
