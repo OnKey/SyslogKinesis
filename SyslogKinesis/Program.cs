@@ -71,14 +71,17 @@ namespace SyslogKinesis
             {
                 throw new ArgumentException("STREAMTYPE must be set in either an environment variable or appsettings.json with firehose or stream");
             }
+            Log.Information($"Sending events to {streamtype} - {streamname}");
 
             if (!string.IsNullOrEmpty(config["LISTENINGPORT"]))
             {
+                Log.Information($"Listening on port {config["LISTENINGPORT"]}");
                 listeningPort = int.Parse(config["LISTENINGPORT"]);
             }
 
             if (!string.IsNullOrEmpty(config["AWSPROFILE"]))
             {
+                Log.Information($"Using AWS Profile: {config["AWSPROFILE"]}");
                 Environment.SetEnvironmentVariable("AWS_PROFILE", config["AWSPROFILE"]);
             }
 
@@ -87,15 +90,19 @@ namespace SyslogKinesis
                 switch (config["LOGLEVEL"].ToLower())
                 {
                     case "information":
+                        Log.Information("Setting log level to: Information");
                         LogLevel.MinimumLevel = LogEventLevel.Information;
                         break;
                     case "debug":
+                        Log.Information("Setting log level to: Debug");
                         LogLevel.MinimumLevel = LogEventLevel.Debug;
                         break;
                     case "warning":
+                        Log.Information("Setting log level to: Warning");
                         LogLevel.MinimumLevel = LogEventLevel.Warning;
                         break;
                     case "error":
+                        Log.Information("Setting log level to: Error");
                         LogLevel.MinimumLevel = LogEventLevel.Error;
                         break;
                 }
