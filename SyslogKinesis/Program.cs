@@ -1,10 +1,11 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
 using SyslogKinesis.kinesis;
 using SyslogKinesis.syslog;
 using Microsoft.Extensions.Configuration;
+using Serilog.Core;
+using Serilog.Events;
 
 namespace SyslogKinesis
 {
@@ -13,6 +14,7 @@ namespace SyslogKinesis
         private static String streamname;
         private static KinesisType streamtype;
         private static int listeningPort = 514;
+        private static LoggingLevelSwitch LogLevel;
 
         static void Main(string[] args)
         {
@@ -34,18 +36,20 @@ namespace SyslogKinesis
 
         static void ConfigureLogging()
         {
-             var log = new LoggerConfiguration()
+            LogLevel = new LoggingLevelSwitch();
+            LogLevel.MinimumLevel = LogEventLevel.Information;
+            var log = new LoggerConfiguration()
                 .WriteTo.Console();
-             log.MinimumLevel.Debug();
-             Log.Logger = log.CreateLogger();
+            log.MinimumLevel.ControlledBy(LogLevel);
+            Log.Logger = log.CreateLogger();
         }
 
         static void GetConfiguration()
         {
             var config = new ConfigurationBuilder()
-                .AddEnvironmentVariables()
                 .AddJsonFile("appsettings.json", optional: true)
                 .AddJsonFile("appsettings.local.json", optional: true)
+                .AddEnvironmentVariables()
                 .Build();
 
             streamname = config["STREAMNAME"];
@@ -76,6 +80,25 @@ namespace SyslogKinesis
             if (!string.IsNullOrEmpty(config["AWSPROFILE"]))
             {
                 Environment.SetEnvironmentVariable("AWS_PROFILE", config["AWSPROFILE"]);
+            }
+
+            if (!string.IsNullOrEmpty(config["LOGLEVEL"]))
+            {
+                switch (config["LOGLEVEL"].ToLower())
+                {
+                    case "information":
+                        LogLevel.MinimumLevel = LogEventLevel.Information;
+                        break;
+                    case "debug":
+                        LogLevel.MinimumLevel = LogEventLevel.Debug;
+                        break;
+                    case "warning":
+                        LogLevel.MinimumLevel = LogEventLevel.Warning;
+                        break;
+                    case "error":
+                        LogLevel.MinimumLevel = LogEventLevel.Error;
+                        break;
+                }
             }
         }
 
