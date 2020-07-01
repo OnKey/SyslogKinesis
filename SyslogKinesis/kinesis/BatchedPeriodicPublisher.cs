@@ -44,7 +44,7 @@ namespace SyslogKinesis.kinesis
         {
             if (this.queue.IsEmpty)
             {
-                Log.Debug("Queue is empty, so not publishing events");
+                Log.Verbose("Queue is empty, so not publishing events");
                 return;
             }
 
