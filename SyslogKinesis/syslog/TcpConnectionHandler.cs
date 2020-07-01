@@ -37,6 +37,10 @@ namespace SyslogKinesis.syslog
             {
                 Log.Debug($"Timed out on connection from {client.Client.RemoteEndPoint}");
             }
+            catch (Exception ex)
+            {
+                Log.Warning("Something went wrong processing message {@ex}", ex);
+            }
             finally
             {
                 client.Close();
@@ -48,6 +52,7 @@ namespace SyslogKinesis.syslog
             while (true)
             {
                 var line = await this.ReadAsync(reader);
+                Log.Verbose($"Received: {line}");
                 if (line == null)
                 {
                     Log.Verbose($"Connection closed from {client.Client.RemoteEndPoint}");

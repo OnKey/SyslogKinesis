@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Serilog;
 
 namespace SyslogKinesis.syslog
 {
@@ -21,18 +23,24 @@ namespace SyslogKinesis.syslog
 
         public SyslogMessage(string rawMessage, string sourceIp)
         {
+            this.SoureIp = sourceIp;
+
             var match = msg_rfc3164.Match(rawMessage);
             if (match.Success)
             {
                 this.ReadRfc3164(match);
-            }
-            else
-            {
-                match = regex_rfc5424.Match(rawMessage);
-                this.ReadRfc5424(match);
+                return;
             }
 
-            this.SoureIp = sourceIp;
+            match = regex_rfc5424.Match(rawMessage);
+            if (match.Success)
+            {
+                this.ReadRfc5424(match);
+                return;
+            }
+
+            Log.Warning($"Message does not match RFC3164 or RFC5424 formats: {rawMessage}");
+            throw new FormatException();
         }
 
         private void ReadRfc5424(Match match)
@@ -62,9 +70,10 @@ namespace SyslogKinesis.syslog
             this.Facility = (FacilityType)Math.Floor((double)priority / 8);
             this.Severity = (SeverityType)(priority % 8);
            
+            // rfc3164 has an odd date style which sometimes includes extra spaces, hence the parse config below
             var date = match.Groups[2].Value.TrimEnd();
-            this.Datestamp = DateTime.ParseExact(date, "MMM dd HH:mm:ss", null);
-            
+            this.Datestamp = DateTime.ParseExact(date, "MMM d HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces);
+
             this.Host = match.Groups[3].Value;
 
             this.Content = match.Groups[4].Value;
