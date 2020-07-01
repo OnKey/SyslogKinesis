@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
+using SyslogKinesis.kinesis;
 
 namespace SyslogKinesis.syslog
 {
@@ -11,13 +12,13 @@ namespace SyslogKinesis.syslog
     {
         private CancellationTokenSource cts;
         private int port;
-        private ILogger syslogLogger;
+        private IEventPublisher logger;
 
-        public UdpServer(int port, ILogger syslogLogger)
+        public UdpServer(int port, IEventPublisher logger)
         {
             cts = new CancellationTokenSource();
             this.port = port;
-            this.syslogLogger = syslogLogger;
+            this.logger = logger;
         }
         
         public async Task Run()
@@ -39,11 +40,12 @@ namespace SyslogKinesis.syslog
 
         public async Task HandleAsync(UdpReceiveResult udpResult)
         {
-            Log.Debug($"Received new UDP message from {udpResult.RemoteEndPoint}");
+            Log.Verbose($"Received new UDP message from {udpResult.RemoteEndPoint}");
             var line = Encoding.ASCII.GetString(udpResult.Buffer);
-            var syslogMsg = new SyslogMessage(line);
+
             var ip = udpResult.RemoteEndPoint.Address;
-            this.syslogLogger.Information("{@SourceIp}: {@SyslogMessage}", ip.ToString(), syslogMsg);
+            var syslogMsg = new SyslogMessage(line, ip.ToString());
+            await this.logger.QueueEvent(syslogMsg);
         }
 
         public void Stop()

@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Serilog;
+using SyslogKinesis.kinesis;
 
 namespace SyslogKinesis.syslog
 {
@@ -13,18 +14,18 @@ namespace SyslogKinesis.syslog
     {
         private const int TcpTimeout = 900000; // 15 mins
         private TcpClient client;
-        private ILogger syslogLogger;
+        private IEventPublisher logger;
 
-        public TcpConnectionHandler(ILogger syslogLogger)
+        public TcpConnectionHandler(IEventPublisher logger)
         {
-            this.syslogLogger = syslogLogger;
+            this.logger = logger;
         }
 
         public async Task HandleAsync(TcpClient client)
         {
             try
             {
-                Log.Debug($"Received new TCP connection from {client.Client.RemoteEndPoint}");
+                Log.Verbose($"Received new TCP connection from {client.Client.RemoteEndPoint}");
                 this.client = client;
                 var netStream = client.GetStream();
                 var reader = new StreamReader(netStream);
@@ -49,13 +50,13 @@ namespace SyslogKinesis.syslog
                 var line = await this.ReadAsync(reader);
                 if (line == null)
                 {
-                    Log.Debug($"Connection closed from {client.Client.RemoteEndPoint}");
+                    Log.Verbose($"Connection closed from {client.Client.RemoteEndPoint}");
                     return;
                 }
-                
-                var syslogMsg = new SyslogMessage(line);
+
                 var ip = ((System.Net.IPEndPoint)this.client.Client.RemoteEndPoint).Address;
-                this.syslogLogger.Information("{@SourceIp}: {@SyslogMessage}", ip.ToString(), syslogMsg);
+                var syslogMsg = new SyslogMessage(line, ip.ToString());
+                await this.logger.QueueEvent(syslogMsg);
             }
         }
 

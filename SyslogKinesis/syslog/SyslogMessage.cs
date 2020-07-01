@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace SyslogKinesis.syslog
 {
@@ -8,13 +10,16 @@ namespace SyslogKinesis.syslog
         private static Regex regex_rfc5424 = new Regex(@"^(\<\d{1,3}\>)\d\s(?:(\d{4}[-]\d{2}[-]\d{2}[T]\d{2}[:]\d{2}[:]\d{2}(?:\.\d{1,6})?(?:[+-]\d{2}[:]\d{2}|Z)?)|-)\s(?:([\w][\w\d\.@-]*)|-)\s(.*)$", RegexOptions.Compiled);
         private static Regex msg_rfc3164 = new Regex(@"^(\<\d{1,3}\>)([A-Z][a-z][a-z]\s{1,2}\d{1,2}\s\d{2}[:]\d{2}[:]\d{2})\s([\w][\w\d\.@-]*)\s(.*)$", RegexOptions.Compiled);
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public FacilityType Facility { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
         public SeverityType Severity { get; set; }
         public DateTime Datestamp { get; set; }
         public string Content { get; set; }
         public string Host { get; set; }
+        public string SoureIp { get; set; }
 
-        public SyslogMessage(string rawMessage)
+        public SyslogMessage(string rawMessage, string sourceIp)
         {
             var match = msg_rfc3164.Match(rawMessage);
             if (match.Success)
@@ -26,6 +31,8 @@ namespace SyslogKinesis.syslog
                 match = regex_rfc5424.Match(rawMessage);
                 this.ReadRfc5424(match);
             }
+
+            this.SoureIp = sourceIp;
         }
 
         private void ReadRfc5424(Match match)

@@ -11,8 +11,8 @@ namespace SyslogKinesis
 {
     class Program
     {
-        private static String streamname;
-        private static KinesisType streamtype;
+        private static string streamname;
+        private static KinesisLogFactory.KinesisType streamtype;
         private static int listeningPort = 514;
         private static LoggingLevelSwitch LogLevel;
 
@@ -22,13 +22,12 @@ namespace SyslogKinesis
             Log.Information("Starting SyslogKinesis");
             GetConfiguration();
 
-            var kinesisLogger = streamtype == KinesisType.Firehose ? KinesisLogFactory.GetKinesisFirehoseLogger(streamname) : KinesisLogFactory.GetKinesisStreamLogger(streamname);
-
-            var handler = new TcpConnectionHandler(kinesisLogger);
+            var eventPublisher = KinesisLogFactory.GetKinesisEventPublisher(streamtype, streamname);
+            var handler = new TcpConnectionHandler(eventPublisher);
             var tcpListener = new TcpServer(handler, listeningPort);
             var tcpTask = tcpListener.Run();
 
-            var udpListener = new UdpServer(listeningPort, kinesisLogger);
+            var udpListener = new UdpServer(listeningPort, eventPublisher);
             var udpTask = udpListener.Run();
 
             Task.WhenAny(tcpTask, udpTask).Wait(); // Stop if either server stops
@@ -36,8 +35,7 @@ namespace SyslogKinesis
 
         static void ConfigureLogging()
         {
-            LogLevel = new LoggingLevelSwitch();
-            LogLevel.MinimumLevel = LogEventLevel.Information;
+            LogLevel = new LoggingLevelSwitch { MinimumLevel = LogEventLevel.Information };
             var log = new LoggerConfiguration()
                 .WriteTo.Console();
             log.MinimumLevel.ControlledBy(LogLevel);
@@ -61,11 +59,11 @@ namespace SyslogKinesis
 
             if (string.Equals(config["STREAMTYPE"], "firehose", StringComparison.InvariantCultureIgnoreCase))
             {
-                streamtype = KinesisType.Firehose;
+                streamtype = KinesisLogFactory.KinesisType.Firehose;
             } 
             else if (string.Equals(config["STREAMTYPE"], "stream", StringComparison.InvariantCultureIgnoreCase))
             {
-                streamtype = KinesisType.Stream;
+                streamtype = KinesisLogFactory.KinesisType.Stream;
             }
             else
             {
@@ -97,6 +95,10 @@ namespace SyslogKinesis
                         Log.Information("Setting log level to: Debug");
                         LogLevel.MinimumLevel = LogEventLevel.Debug;
                         break;
+                    case "verbose":
+                        Log.Information("Setting log level to: Verbose");
+                        LogLevel.MinimumLevel = LogEventLevel.Verbose;
+                        break;
                     case "warning":
                         Log.Information("Setting log level to: Warning");
                         LogLevel.MinimumLevel = LogEventLevel.Warning;
@@ -107,11 +109,6 @@ namespace SyslogKinesis
                         break;
                 }
             }
-        }
-
-        enum KinesisType
-        {
-            Firehose, Stream
         }
     }
 }
