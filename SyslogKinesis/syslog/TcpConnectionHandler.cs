@@ -51,6 +51,7 @@ namespace SyslogKinesis.syslog
         {
             while (true)
             {
+                var ip = ((System.Net.IPEndPoint)this.client.Client.RemoteEndPoint).Address;
                 var line = await this.ReadAsync(reader);
                 Log.Verbose($"Received: {line}");
                 if (line == null)
@@ -59,7 +60,6 @@ namespace SyslogKinesis.syslog
                     return;
                 }
 
-                var ip = ((System.Net.IPEndPoint)this.client.Client.RemoteEndPoint).Address;
                 var syslogMsg = new SyslogMessage(line, ip.ToString());
                 await this.logger.QueueEvent(syslogMsg);
             }
