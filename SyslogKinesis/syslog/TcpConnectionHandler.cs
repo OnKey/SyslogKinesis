@@ -14,6 +14,7 @@ namespace SyslogKinesis.syslog
     {
         private const int TcpTimeout = 900000; // 15 mins
         private TcpClient client;
+        private string RemoteIp;
         private IEventPublisher logger;
 
         public TcpConnectionHandler(IEventPublisher logger)
@@ -25,8 +26,10 @@ namespace SyslogKinesis.syslog
         {
             try
             {
-                Log.Verbose($"Received new TCP connection from {client.Client.RemoteEndPoint}");
                 this.client = client;
+                this.RemoteIp = ((System.Net.IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
+                Log.Verbose($"Received new TCP connection from {this.RemoteIp}");
+                
                 var netStream = client.GetStream();
                 var reader = new StreamReader(netStream);
                 var writer = new StreamWriter(netStream) {AutoFlush = true};
@@ -51,7 +54,6 @@ namespace SyslogKinesis.syslog
         {
             while (true)
             {
-                var ip = ((System.Net.IPEndPoint)this.client.Client.RemoteEndPoint).Address;
                 var line = await this.ReadAsync(reader);
                 Log.Verbose($"Received: {line}");
                 if (line == null)
@@ -60,7 +62,7 @@ namespace SyslogKinesis.syslog
                     return;
                 }
 
-                var syslogMsg = new SyslogMessage(line, ip.ToString());
+                var syslogMsg = new SyslogMessage(line, this.RemoteIp);
                 await this.logger.QueueEvent(syslogMsg);
             }
         }
