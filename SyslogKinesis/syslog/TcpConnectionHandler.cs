@@ -13,7 +13,6 @@ namespace SyslogKinesis.syslog
     public class TcpConnectionHandler : ITcpConnectionHandler
     {
         private const int TcpTimeout = 900000; // 15 mins
-        private TcpClient client;
         private string RemoteIp;
         private IEventPublisher logger;
 
@@ -26,7 +25,6 @@ namespace SyslogKinesis.syslog
         {
             try
             {
-                this.client = client;
                 this.RemoteIp = ((System.Net.IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
                 Log.Verbose($"Received new TCP connection from {this.RemoteIp}");
                 
@@ -36,9 +34,9 @@ namespace SyslogKinesis.syslog
 
                 await this.SyslogReceiveAsync(reader, writer);
             }
-            catch (TimeoutException ex)
+            catch (TimeoutException)
             {
-                Log.Debug($"Timed out on connection from {client.Client.RemoteEndPoint}");
+                Log.Debug($"Timed out on connection from {this.RemoteIp}");
             }
             catch (Exception ex)
             {
@@ -58,7 +56,7 @@ namespace SyslogKinesis.syslog
                 Log.Verbose($"Received: {line}");
                 if (line == null)
                 {
-                    Log.Verbose($"Connection closed from {client.Client.RemoteEndPoint}");
+                    Log.Verbose($"Connection closed from {this.RemoteIp}");
                     return;
                 }
 
