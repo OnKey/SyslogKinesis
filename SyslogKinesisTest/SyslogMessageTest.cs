@@ -41,5 +41,17 @@ namespace SyslogKinesisTest
 
             Assert.AreEqual(DateTime.ParseExact("Jul  1 13:27:24", "MMM d HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces), syslog.Datestamp);
         }
+
+        [Test]
+        public void CanParseCEF()
+        {
+            var msg = "<46>CEF:0|Device Vendor|Device Product|Device Version|Signature ID|Name|Severity|Extension";
+            var syslog = new SyslogMessage(msg, "127.0.0.1");
+
+            Assert.AreEqual(SyslogMessage.FacilityType.Syslog, syslog.Facility);
+            Assert.AreEqual(SyslogMessage.SeverityType.Informational, syslog.Severity);
+            Assert.AreEqual("127.0.0.1", syslog.SoureIp);
+            Assert.AreEqual(msg.Substring(4), syslog.Content);
+        }
     }
 }
