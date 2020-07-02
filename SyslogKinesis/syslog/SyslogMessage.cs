@@ -20,11 +20,11 @@ namespace SyslogKinesis.syslog
         public DateTime? Datestamp { get; set; }
         public string Content { get; set; }
         public string Host { get; set; }
-        public string SoureIp { get; set; }
+        public string SourceIp { get; set; }
 
         public SyslogMessage(string rawMessage, string sourceIp)
         {
-            this.SoureIp = sourceIp;
+            this.SourceIp = sourceIp;
 
             var match = regex_rfc3164.Match(rawMessage);
             if (match.Success)
