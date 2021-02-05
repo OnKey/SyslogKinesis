@@ -8,7 +8,7 @@ using SyslogKinesis.kinesis;
 
 namespace SyslogKinesis.syslog
 {
-    class UdpServer
+    internal class UdpServer
     {
         private CancellationTokenSource cts;
         private int port;

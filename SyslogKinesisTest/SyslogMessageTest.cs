@@ -50,7 +50,7 @@ namespace SyslogKinesisTest
 
             Assert.AreEqual(SyslogMessage.FacilityType.Syslog, syslog.Facility);
             Assert.AreEqual(SyslogMessage.SeverityType.Informational, syslog.Severity);
-            Assert.AreEqual("127.0.0.1", syslog.SoureIp);
+            Assert.AreEqual("127.0.0.1", syslog.SourceIp);
             Assert.AreEqual(msg.Substring(4), syslog.Content);
         }
     }

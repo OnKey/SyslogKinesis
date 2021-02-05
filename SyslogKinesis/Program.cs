@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Serilog;
 using SyslogKinesis.kinesis;
@@ -7,16 +8,17 @@ using Microsoft.Extensions.Configuration;
 using Serilog.Core;
 using Serilog.Events;
 
+[assembly: InternalsVisibleTo("SyslogKinesisTest")]
 namespace SyslogKinesis
 {
-    class Program
+    public class Program
     {
         private static string streamname;
         private static KinesisLogFactory.KinesisType streamtype;
         private static int listeningPort = 514;
         private static LoggingLevelSwitch LogLevel;
 
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             ConfigureLogging();
             Log.Information("Starting SyslogKinesis");
@@ -33,7 +35,7 @@ namespace SyslogKinesis
             Task.WhenAny(tcpTask, udpTask).Wait(); // Stop if either server stops
         }
 
-        static void ConfigureLogging()
+        public static void ConfigureLogging()
         {
             LogLevel = new LoggingLevelSwitch { MinimumLevel = LogEventLevel.Information };
             var log = new LoggerConfiguration()

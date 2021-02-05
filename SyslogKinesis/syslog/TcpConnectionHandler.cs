@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Amazon.Runtime.Internal;
 using Serilog;
 using SyslogKinesis.kinesis;
 
@@ -15,6 +16,7 @@ namespace SyslogKinesis.syslog
         private const int TcpTimeout = 900000; // 15 mins
         private string RemoteIp;
         private IEventPublisher logger;
+        private NetworkStream stream;
 
         public TcpConnectionHandler(IEventPublisher logger)
         {
@@ -28,11 +30,9 @@ namespace SyslogKinesis.syslog
                 this.RemoteIp = ((System.Net.IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
                 Log.Verbose($"Received new TCP connection from {this.RemoteIp}");
                 
-                var netStream = client.GetStream();
-                var reader = new StreamReader(netStream);
-                var writer = new StreamWriter(netStream) {AutoFlush = true};
+                this.stream = client.GetStream();
 
-                await this.SyslogReceiveAsync(reader, writer);
+                await this.SyslogReceiveAsync();
             }
             catch (TimeoutException)
             {
@@ -48,11 +48,11 @@ namespace SyslogKinesis.syslog
             }
         }
 
-        public async Task SyslogReceiveAsync(StreamReader reader, TextWriter writer)
+        public async Task SyslogReceiveAsync()
         {
             while (true)
             {
-                var line = await this.ReadAsync(reader);
+                var line = await this.ReadAsync();
                 Log.Verbose($"Received: {line}");
                 if (line == null)
                 {
@@ -65,26 +65,23 @@ namespace SyslogKinesis.syslog
             }
         }
 
-        private async Task<string> ReadAsync(StreamReader reader)
+        private async Task<string> ReadAsync()
         {
-            var readTask = reader.ReadLineAsync();
-            if (await Task.WhenAny(readTask, Task.Delay(TcpTimeout)) == readTask)
+            var buffer = new TcpMessageBuffer(this.stream);
+            var octetMessage = new OctetCounting(buffer);
+            if (await octetMessage.IsOctetCountingFormat())
             {
-                return readTask.Result;
+                return await octetMessage.ReadMessage();
+            } 
+
+            var ntfMessage = new NonTransparentFraming(buffer);
+            if (await ntfMessage.IsNonTransparentFramingFormat())
+            {
+                return await ntfMessage.ReadMessage();
             }
 
-            throw new TimeoutException();
-        }
-
-        private async Task WriteAsync(TextWriter writer, string line)
-        {
-            var writeTask = writer.WriteLineAsync(line);
-            if (await Task.WhenAny(writeTask, Task.Delay(TcpTimeout)) == writeTask)
-            {
-                return;
-            }
-
-            throw new TimeoutException();
+            Log.Warning("Invalid message format. TCP syslog, first char: " + buffer.GetByte(0));
+            return null;
         }
     }
 }

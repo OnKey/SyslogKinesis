@@ -55,7 +55,8 @@ namespace SyslogKinesisTest
 
     class TestPublisher : BatchedPeriodicPublisher
     {
-        public int PublishedCount = 0;
+        public int PublishedCount;
+
 
         public TestPublisher(int publishInterval) : base(publishInterval)
         {

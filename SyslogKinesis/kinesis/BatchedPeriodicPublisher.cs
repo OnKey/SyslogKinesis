@@ -15,7 +15,7 @@ namespace SyslogKinesis.kinesis
         public abstract Task PublishEvents(IEnumerable<object> eventList);
 
         public int QueueSizePublishTrigger { get; set; } = 100;
-        private ConcurrentQueue<Object> queue = new ConcurrentQueue<object>();
+        protected Queue<object> queue = new Queue<object>();
         private System.Timers.Timer timer;
 
         protected BatchedPeriodicPublisher(int publishInterval = 5000)
@@ -42,14 +42,14 @@ namespace SyslogKinesis.kinesis
 
         private async Task PublishQueue()
         {
-            if (this.queue.IsEmpty)
+            if (this.queue.Count == 0)
             {
                 Log.Verbose("Queue is empty, so not publishing events");
                 return;
             }
 
             var savedQueue = this.queue;
-            this.queue = new ConcurrentQueue<object>();
+            this.queue = new Queue<object>();
             Log.Information($"Publishing {savedQueue.Count} events");
             await this.PublishEvents(savedQueue);
         }
