@@ -77,7 +77,12 @@ namespace SyslogKinesis.syslog
                 return await ntfMessage.ReadMessage();
             }
 
-            Log.Warning("Invalid message format. TCP syslog, first char: " + buffer.GetByte(0));
+            var firstByte = await buffer.GetByte(0);
+            if (firstByte != 0x0)
+            {
+                Log.Warning("Invalid message format. TCP syslog, first char: " + await buffer.GetByte(0));
+            }
+
             return null;
         }
     }

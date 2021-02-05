@@ -1,4 +1,5 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build-env
+ARG VERSION=3.1-alpine3.12
+FROM mcr.microsoft.com/dotnet/core/sdk:$VERSION AS build-env
 WORKDIR /app
 
 # Copy csproj and restore as distinct layers
@@ -10,7 +11,7 @@ COPY SyslogKinesis/* ./
 RUN dotnet publish -c Release -o out SyslogKinesis.csproj
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/core/runtime:3.1
+FROM mcr.microsoft.com/dotnet/core/runtime:$VERSION
 WORKDIR /syslogkinesis
 COPY --from=build-env /app/out .
 EXPOSE 514/udp
