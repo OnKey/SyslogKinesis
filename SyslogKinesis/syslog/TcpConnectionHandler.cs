@@ -1,8 +1,6 @@
 ﻿using System;
-using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using Amazon.Runtime.Internal;
 using Serilog;
 using SyslogKinesis.kinesis;
 
@@ -13,7 +11,6 @@ namespace SyslogKinesis.syslog
     /// </summary>
     public class TcpConnectionHandler : ITcpConnectionHandler
     {
-        private const int TcpTimeout = 900000; // 15 mins
         private string RemoteIp;
         private IEventPublisher logger;
         private NetworkStream stream;
@@ -36,11 +33,11 @@ namespace SyslogKinesis.syslog
             }
             catch (TimeoutException)
             {
-                Log.Debug($"Timed out on connection from {this.RemoteIp}");
+                Log.Debug("Timed out on connection from {remoteIp}", this.RemoteIp);
             }
             catch (Exception ex)
             {
-                Log.Warning("Something went wrong processing message {@ex}", ex);
+                Log.Warning(ex, "Something went wrong processing message");
             }
             finally
             {

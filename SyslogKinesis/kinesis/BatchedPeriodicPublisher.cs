@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Serilog;
 
@@ -15,7 +13,7 @@ namespace SyslogKinesis.kinesis
         public abstract Task PublishEvents(IEnumerable<object> eventList);
 
         public int QueueSizePublishTrigger { get; set; } = 100;
-        protected Queue<object> queue = new Queue<object>();
+        protected List<object> queue = new List<object>();
         private System.Timers.Timer timer;
 
         protected BatchedPeriodicPublisher(int publishInterval = 5000)
@@ -28,7 +26,7 @@ namespace SyslogKinesis.kinesis
 
         public async Task QueueEvent(object item)
         {
-            this.queue.Enqueue(item);
+            this.queue.Add(item);
             if (this.ShouldQueueByPublished())
             {
                 await this.PublishQueue();
@@ -49,7 +47,7 @@ namespace SyslogKinesis.kinesis
             }
 
             var savedQueue = this.queue;
-            this.queue = new Queue<object>();
+            this.queue = new List<object>();
             Log.Information($"Publishing {savedQueue.Count} events");
             await this.PublishEvents(savedQueue);
         }

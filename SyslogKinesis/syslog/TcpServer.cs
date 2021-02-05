@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
 
-
 namespace SyslogKinesis.syslog
 {
     public class TcpServer
@@ -30,7 +29,7 @@ namespace SyslogKinesis.syslog
                 try
                 {
                     var client = await this.listener.AcceptTcpClientAsync();
-                    Task.Run(() => this.Handler.HandleAsync(client));
+                    _ = this.Handler.HandleAsync(client);
                 }
                 catch (Exception ex)
                 {

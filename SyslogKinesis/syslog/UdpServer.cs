@@ -29,7 +29,7 @@ namespace SyslogKinesis.syslog
                 while (!this.cts.IsCancellationRequested)
                 {
                     var packet = await udpClient.ReceiveAsync();
-                    Task.Run(() => this.HandleAsync(packet));
+                    _ =  this.HandleAsync(packet);
                 }
             }
             catch (Exception ex)

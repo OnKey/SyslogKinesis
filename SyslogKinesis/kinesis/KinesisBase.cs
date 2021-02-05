@@ -25,7 +25,7 @@ namespace SyslogKinesis.kinesis
                 retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(2, retryAttempt) * 150)
                                 + TimeSpan.FromMilliseconds(Jitterer.Next(0, 100)));
 
-        public override async Task PublishEvents(IEnumerable<Object> eventList)
+        public override async Task PublishEvents(IEnumerable<object> eventList)
         {
             var i = 0;
             var listsToUpload = this.SplitRecordsList(eventList);
