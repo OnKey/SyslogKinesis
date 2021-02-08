@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Serilog;
@@ -50,13 +51,13 @@ namespace SyslogKinesis.syslog
             while (true)
             {
                 var line = await this.ReadAsync();
-                Log.Verbose($"Received: {line}");
                 if (line == null)
                 {
                     Log.Verbose($"Connection closed from {this.RemoteIp}");
                     return;
                 }
 
+                Log.Verbose($"Received: {line}");
                 var syslogMsg = new SyslogMessage(line, this.RemoteIp);
                 await this.logger.QueueEvent(syslogMsg);
             }
@@ -64,23 +65,29 @@ namespace SyslogKinesis.syslog
 
         private async Task<string> ReadAsync()
         {
-            var buffer = new TcpMessageBuffer(this.stream);
-            var octetMessage = new OctetCounting(buffer);
-            if (await octetMessage.IsOctetCountingFormat())
+            try
             {
-                return await octetMessage.ReadMessage();
-            } 
+                var buffer = new TcpMessageBuffer(this.stream);
+                var octetMessage = new OctetCounting(buffer);
+                if (await octetMessage.IsOctetCountingFormat())
+                {
+                    return await octetMessage.ReadMessage();
+                }
 
-            var ntfMessage = new NonTransparentFraming(buffer);
-            if (await ntfMessage.IsNonTransparentFramingFormat())
-            {
-                return await ntfMessage.ReadMessage();
+                var ntfMessage = new NonTransparentFraming(buffer);
+                if (await ntfMessage.IsNonTransparentFramingFormat())
+                {
+                    return await ntfMessage.ReadMessage();
+                }
+
+                var firstByte = await buffer.GetByte(0);
+                if (firstByte != 0x0)
+                {
+                    Log.Warning("Invalid message format. TCP syslog, first char: " + await buffer.GetByte(0));
+                }
             }
-
-            var firstByte = await buffer.GetByte(0);
-            if (firstByte != 0x0)
+            catch (Exception ex) when (ex is IOException || ex is ObjectDisposedException) // Connection closed
             {
-                Log.Warning("Invalid message format. TCP syslog, first char: " + await buffer.GetByte(0));
             }
 
             return null;
